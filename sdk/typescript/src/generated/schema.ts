@@ -25,67 +25,67 @@ export interface ApiError {
 
 export interface Price {
   /** Ціна в копійках. */
-  priceMinor?: number;
+  priceMinor: number;
   /** Ціна десятковим рядком (гривні). */
-  priceDecimal?: string;
+  priceDecimal: string;
   /** @example "UAH" */
-  currency?: string;
-  isFree?: boolean;
+  currency: string;
+  isFree: boolean;
 }
 
 export type TicketType = Price & {
-  id?: string;
-  name?: string;
-  capacity?: number | null;
-  sold?: number;
-  remaining?: number | null;
+  id: string;
+  name: string;
+  capacity: number | null;
+  sold: number;
+  remaining: number | null;
   /** format date-time */
-  salesStart?: string | null;
+  salesStart: string | null;
   /** format date-time */
-  salesEnd?: string | null;
-  status?: "on_sale" | "sold_out" | "sales_not_started" | "sales_ended";
+  salesEnd: string | null;
+  status: "on_sale" | "sold_out" | "sales_not_started" | "sales_ended";
 };
 
 export interface EventSummary {
   /** shortId події */
-  id?: string;
+  id: string;
   /** format uri */
-  url?: string;
-  title?: string;
+  url: string;
+  title: string;
   /** format date-time */
-  startAt?: string | null;
+  startAt: string | null;
   /** format date-time */
-  endAt?: string | null;
-  imageUrl?: string | null;
-  eventType?: string | null;
-  status?: string | null;
-  city?: string | null;
-  venue?: string | null;
+  endAt: string | null;
+  imageUrl: string | null;
+  eventType: string | null;
+  status: string | null;
+  city: string | null;
+  venue: string | null;
 }
 
 export interface EventDetail {
-  id?: string;
+  id: string;
   /** format uri */
-  url?: string;
-  title?: string;
-  description?: string | null;
-  imageUrl?: string | null;
+  url: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
   /** format date-time */
-  startAt?: string | null;
+  startAt: string | null;
   /** format date-time */
-  endAt?: string | null;
-  allDay?: boolean;
-  eventType?: string | null;
-  status?: string | null;
-  attendanceMode?: string;
-  capacity?: number | null;
-  location?: Record<string, unknown> | null;
-  organizer?: Record<string, unknown>;
-  refundPolicy?: {
+  endAt: string | null;
+  allDay: boolean;
+  eventType: string | null;
+  status: string | null;
+  attendanceMode: string;
+  capacity: number | null;
+  location: Record<string, unknown> | null;
+  organizer: Record<string, unknown>;
+  refundPolicy: {
     refundsEnabled?: boolean;
     refundDeadlineHours?: number | null;
   };
-  ticketTypes?: Array<TicketType>;
+  ticketTypes: Array<TicketType>;
 }
 
 export interface TicketSelection {
@@ -245,17 +245,17 @@ export interface BatchResult {
 }
 
 export interface TableAvailability {
-  locationId?: string;
+  locationId: string;
   /** format date */
-  date?: string;
-  reason?: "ok" | "disabled" | "closed" | "no_slots";
-  maxGuests?: number;
-  slots?: Array<{
+  date: string;
+  reason: "ok" | "disabled" | "closed" | "no_slots";
+  maxGuests: number;
+  slots: Array<{
     /** @example "19:00" */
-    value?: string;
+    value: string;
     /** @example "19:00" */
-    label?: string;
-    available?: boolean;
+    label: string;
+    available: boolean;
   }>;
 }
 
@@ -460,9 +460,8 @@ export type CreateWebhookResponse = {
 /** Parameters of `updateWebhook` (path, query and body fields in one object). */
 export interface UpdateWebhookParams {
   endpointId: string;
-  /** Enable or disable delivery. Enabling also resets the failure counter. */
   isActive?: boolean;
-  /** Replaces the subscribed event types. */
+  /** minItems 1 */
   events?: Array<WebhookEventType>;
 }
 

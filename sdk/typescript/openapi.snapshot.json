@@ -3,12 +3,16 @@
   "info": {
     "title": "AOA Agent API",
     "version": "1.0.0",
-    "description": "Публічний API для пошуку закладів і подій, бронювання столиків та купівлі квитків. Призначений для зовнішніх AI-агентів і партнерських інтеграцій. Write-операції дозволені лише після явного підтвердження людини.\n\nFree tier: read-операції безкоштовні й працюють без ключа (60 запитів на хвилину з IP); write-операції вимагають партнерський API-ключ.\n\nВерсіонування: версія в шляху (/api/v1). Зміни, що ламають сумісність, виходять лише в новій версії. Застарілий ендпоінт позначається заголовками Deprecation і Sunset (RFC 9745, RFC 8594) щонайменше за 90 днів до вимкнення, а дата вимкнення дублюється в документації.",
+    "description": "Публічний API для пошуку закладів і подій, бронювання столиків та купівлі квитків. Призначений для зовнішніх AI-агентів і партнерських інтеграцій. Write-операції дозволені лише після явного підтвердження людини.\n\nFree tier: read-операції безкоштовні й працюють без ключа (60 запитів на хвилину з IP); write-операції вимагають партнерський API-ключ.\n\nВерсіонування: версія в шляху (/api/v1). Зміни, що ламають сумісність, виходять лише в новій версії. Застарілий ендпоінт позначається заголовками Deprecation і Sunset (RFC 9745, RFC 8594) щонайменше за 90 днів до вимкнення, а дата вимкнення дублюється в документації.\n\nDeprecation policy: the API is versioned in the URL path (/api/v1). Breaking changes ship only in a new version. A deprecated endpoint returns the Deprecation (RFC 9745) and Sunset (RFC 8594) headers at least 90 days before it is removed, with a Link rel=\"deprecation\" to the policy page. No v1 endpoint is deprecated today.",
     "contact": {
       "name": "AOA",
       "url": "https://aoa.com.ua/contact"
     },
     "termsOfService": "https://aoa.com.ua/terms"
+  },
+  "externalDocs": {
+    "description": "Versioning and deprecation policy (Deprecation, Sunset)",
+    "url": "https://aoa.com.ua/docs/api-reference/versioning"
   },
   "servers": [
     {
@@ -54,6 +58,20 @@
         "schema": {
           "type": "integer",
           "example": 60
+        }
+      },
+      "Deprecation": {
+        "description": "RFC 9745: present only on a deprecated endpoint, as a structured date (for example @1767225600) of when it was deprecated.",
+        "schema": {
+          "type": "string",
+          "example": "@1767225600"
+        }
+      },
+      "Sunset": {
+        "description": "RFC 8594: HTTP-date after which a deprecated endpoint stops working; at least 90 days after Deprecation.",
+        "schema": {
+          "type": "string",
+          "example": "Wed, 01 Apr 2026 00:00:00 GMT"
         }
       }
     },
@@ -133,7 +151,13 @@
           "isFree": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "priceMinor",
+          "priceDecimal",
+          "currency",
+          "isFree"
+        ]
       },
       "TicketType": {
         "allOf": [
@@ -187,7 +211,17 @@
                   "sales_ended"
                 ]
               }
-            }
+            },
+            "required": [
+              "id",
+              "name",
+              "capacity",
+              "sold",
+              "remaining",
+              "salesStart",
+              "salesEnd",
+              "status"
+            ]
           }
         ]
       },
@@ -249,7 +283,19 @@
               "null"
             ]
           }
-        }
+        },
+        "required": [
+          "id",
+          "url",
+          "title",
+          "startAt",
+          "endAt",
+          "imageUrl",
+          "eventType",
+          "status",
+          "city",
+          "venue"
+        ]
       },
       "EventDetail": {
         "type": "object",
@@ -343,7 +389,25 @@
               "$ref": "#/components/schemas/TicketType"
             }
           }
-        }
+        },
+        "required": [
+          "id",
+          "url",
+          "title",
+          "description",
+          "imageUrl",
+          "startAt",
+          "endAt",
+          "allDay",
+          "eventType",
+          "status",
+          "attendanceMode",
+          "capacity",
+          "location",
+          "organizer",
+          "refundPolicy",
+          "ticketTypes"
+        ]
       },
       "TicketSelection": {
         "type": "object",
@@ -839,10 +903,22 @@
                 "available": {
                   "type": "boolean"
                 }
-              }
+              },
+              "required": [
+                "value",
+                "label",
+                "available"
+              ]
             }
           }
-        }
+        },
+        "required": [
+          "locationId",
+          "date",
+          "reason",
+          "maxGuests",
+          "slots"
+        ]
       }
     }
   },
@@ -1987,6 +2063,39 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Хоча б одне поле. isActive: true вмикає endpoint після авто-вимкнення і скидає лічильник збоїв.",
+                "properties": {
+                  "isActive": {
+                    "type": "boolean"
+                  },
+                  "events": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "order.paid",
+                        "order.failed",
+                        "order.refunded",
+                        "event.cancelled",
+                        "event.updated",
+                        "attendee.registered",
+                        "attendee.checked_in"
+                      ]
+                    }
+                  }
+                },
+                "minProperties": 1
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Endpoint оновлено",
