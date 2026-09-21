@@ -1,6 +1,6 @@
 ---
 name: aoa-api-integration
-description: Integrate the AOA REST API (aoa.com.ua/api/v1) into an app or backend with the official TypeScript, Python or Go SDK or plain HTTP. Covers partner API keys and scopes, the free read tier, rate limits and RateLimit headers, error codes and what to retry, cursor pagination and batch reads, Idempotency-Key for bookings and checkout, asynchronous checkout, API versioning, and receiving webhooks with AOA-Signature verification. Use when writing or reviewing code that calls AOA, handles AOA errors or verifies AOA webhooks.
+description: Integrate the AOA REST API (aoa.com.ua/api/v1) into an app or backend with the official TypeScript, Python or Go SDK or plain HTTP. Covers the sandbox with a self-made test key, partner API keys and scopes, the free read tier, rate limits and RateLimit headers, error codes and what to retry, cursor pagination and batch reads, Idempotency-Key for bookings and checkout, asynchronous checkout, API versioning, and receiving webhooks with AOA-Signature verification. Use when writing or reviewing code that calls AOA, handles AOA errors or verifies AOA webhooks.
 license: MIT
 metadata:
   author: AOA
@@ -49,6 +49,34 @@ Examples: [references/sdk-examples.md](references/sdk-examples.md).
 - `401` means the key is missing, wrong or revoked: do not retry. `403` means
   the key lacks a scope or the resource belongs to another organization.
 - Keep keys on the server. A key in browser or mobile code is compromised.
+
+## Sandbox
+
+Build and test the whole flow before you have a key:
+`https://aoa.com.ua/api/sandbox/v1` runs the same endpoints on test data.
+
+- Reads need no key. Writes take a key you make up yourself:
+  `aoa_test_` plus at least 16 random characters. It only separates your test
+  data from other integrations, so make it random. Live `aoa_live_` keys are
+  rejected there with `401`.
+- Same paths, request bodies, envelopes, error codes and `RateLimit` headers
+  as production, so switching to live means changing the base URL and the key.
+  Every sandbox response carries `AOA-Environment: sandbox`.
+- Nothing real happens: no rows, no emails, no payments. State lives for a day.
+  Test data: venues `sbx-cafe` (bookable, closed on Mondays) and `sbx-bar`
+  (bookings off); events `sbx-lecture` (free), `sbx-concert` (on sale, sold
+  out and sales-ended ticket types), `sbx-workshop` (sales not started).
+- Finish a test payment without a human: `POST /orders/{paymentId}/simulate`
+  with `{"outcome": "paid"}` or `"failed"`. `paymentUrl` opens the same thing
+  as a page.
+- Webhooks: endpoints are managed as in production, but nothing is delivered.
+  Each event is stored as the exact request that would have been sent and is
+  read back from `GET /webhooks/{endpointId}/deliveries` with a fresh
+  `AOA-Signature`; replay it locally to test your verification. Trigger any
+  type with `POST /webhooks/{endpointId}/test`.
+- SDKs take the sandbox base URL: `createAoaClient({ baseUrl })`,
+  `AoaClient(base_url=...)`, `aoa.NewClient(aoa.WithBaseURL(...))`.
+- Docs: https://aoa.com.ua/docs/api-reference/sandbox
 
 ## Rate limits
 

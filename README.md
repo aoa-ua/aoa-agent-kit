@@ -68,6 +68,11 @@ Reads need no key (60 requests per minute per IP). Bookings, ticket holds,
 checkout and webhooks need a partner key `aoa_live_…`, issued on request via
 https://aoa.com.ua/contact.
 
+No key yet? The sandbox runs the same endpoints on test data at
+`https://aoa.com.ua/api/sandbox/v1`: reads need no key, writes take a key you
+make up yourself (`aoa_test_` plus 16 random characters), and nothing real is
+created. Docs: https://aoa.com.ua/docs/api-reference/sandbox
+
 | Language | Package | Registry | Source |
 |---|---|---|---|
 | TypeScript | `@aoa-ua/sdk` | [npm](https://www.npmjs.com/package/@aoa-ua/sdk) | [`sdk/typescript`](sdk/typescript) |
