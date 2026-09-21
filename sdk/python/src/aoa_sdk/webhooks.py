@@ -49,7 +49,14 @@ def verify_webhook_signature(
     if not header or not secret:
         return False
     timestamp, signatures = _parse_header(header)
-    if not timestamp or not timestamp.isdigit() or not signatures:
+    # isdigit() also accepts non-ASCII digits such as "²", which int() rejects;
+    # only plain ASCII decimal timestamps are valid.
+    if (
+        not timestamp
+        or not timestamp.isascii()
+        or not timestamp.isdecimal()
+        or not signatures
+    ):
         return False
     current = time.time() if now is None else now
     if abs(int(current) - int(timestamp)) > tolerance_seconds:
@@ -60,7 +67,13 @@ def verify_webhook_signature(
         secret.encode("utf-8"), f"{timestamp}.".encode("utf-8") + body, hashlib.sha256
     ).hexdigest()
     # compare_digest is constant-time; check every v1 to allow secret rotation.
-    return any(hmac.compare_digest(expected, signature) for signature in signatures)
+    # It raises TypeError on non-ASCII str, so compare bytes: a garbage header
+    # must yield False, not an exception in the caller's webhook handler.
+    expected_bytes = expected.encode("ascii")
+    return any(
+        hmac.compare_digest(expected_bytes, signature.encode("utf-8"))
+        for signature in signatures
+    )
 
 
 def construct_webhook_event(

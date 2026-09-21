@@ -34,6 +34,12 @@ class VerifyTests(unittest.TestCase):
         for header in (None, "", "t=abc,v1=00", f"t={NOW}", "v1=00"):
             self.assertFalse(verify_webhook_signature(header, BODY, SECRET, now=NOW), header)
 
+    def test_non_ascii_header_returns_false_instead_of_raising(self) -> None:
+        # compare_digest raises on non-ASCII str and int() rejects "²":
+        # a hostile header must still be a plain False.
+        for header in (f"t={NOW},v1=ü" + "0" * 63, "t=\u00b2,v1=00", f"t=\u0661{NOW},v1=00"):
+            self.assertFalse(verify_webhook_signature(header, BODY, SECRET, now=NOW), header)
+
     def test_tolerance_window(self) -> None:
         old = sign(BODY, timestamp=NOW - 301)
         self.assertFalse(verify_webhook_signature(old, BODY, SECRET, now=NOW))
