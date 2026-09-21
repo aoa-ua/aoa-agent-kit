@@ -1,0 +1,2147 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AOA Agent API",
+    "version": "1.0.0",
+    "description": "Публічний API для пошуку закладів і подій, бронювання столиків та купівлі квитків. Призначений для зовнішніх AI-агентів і партнерських інтеграцій. Write-операції дозволені лише після явного підтвердження людини.\n\nFree tier: read-операції безкоштовні й працюють без ключа (60 запитів на хвилину з IP); write-операції вимагають партнерський API-ключ.\n\nВерсіонування: версія в шляху (/api/v1). Зміни, що ламають сумісність, виходять лише в новій версії. Застарілий ендпоінт позначається заголовками Deprecation і Sunset (RFC 9745, RFC 8594) щонайменше за 90 днів до вимкнення, а дата вимкнення дублюється в документації.",
+    "contact": {
+      "name": "AOA",
+      "url": "https://aoa.com.ua/contact"
+    },
+    "termsOfService": "https://aoa.com.ua/terms"
+  },
+  "servers": [
+    {
+      "url": "https://aoa.com.ua/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Locations",
+      "description": "Пошук закладів і доступність столиків"
+    },
+    {
+      "name": "Events",
+      "description": "Пошук та деталі подій (read, публічні)"
+    },
+    {
+      "name": "Commerce",
+      "description": "Резервування та купівля квитків (write)"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Підписка на події платформи (push замість опитування)"
+    }
+  ],
+  "components": {
+    "headers": {
+      "RateLimit": {
+        "description": "Стан квоти (draft-ietf-httpapi-ratelimit-headers): r це залишок, t це секунди до поповнення.",
+        "schema": {
+          "type": "string",
+          "example": "\"default\";r=59;t=60"
+        }
+      },
+      "RateLimitPolicy": {
+        "description": "Квота q на вікно w секунд.",
+        "schema": {
+          "type": "string",
+          "example": "\"default\";q=60;w=60"
+        }
+      },
+      "RetryAfter": {
+        "description": "Через скільки секунд повторити запит.",
+        "schema": {
+          "type": "integer",
+          "example": 60
+        }
+      }
+    },
+    "responses": {
+      "RateLimited": {
+        "description": "Перевищено ліміт запитів (code: rate_limited).",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          },
+          "RateLimit": {
+            "$ref": "#/components/headers/RateLimit"
+          },
+          "RateLimit-Policy": {
+            "$ref": "#/components/headers/RateLimitPolicy"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API-ключ партнера. Read-endpoints працюють і без ключа (жорсткіший rate-limit). Write-endpoints вимагають ключ зі scope reservations:write / checkout:write."
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "hint": {
+                "type": "string",
+                "description": "Що зробити далі, щоб виправити запит."
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "Price": {
+        "type": "object",
+        "properties": {
+          "priceMinor": {
+            "type": "integer",
+            "description": "Ціна в копійках."
+          },
+          "priceDecimal": {
+            "type": "string",
+            "description": "Ціна десятковим рядком (гривні)."
+          },
+          "currency": {
+            "type": "string",
+            "example": "UAH"
+          },
+          "isFree": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TicketType": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Price"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "capacity": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "sold": {
+                "type": "integer"
+              },
+              "remaining": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "salesStart": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "salesEnd": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "on_sale",
+                  "sold_out",
+                  "sales_not_started",
+                  "sales_ended"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "EventSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "shortId події"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "eventType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "venue": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "EventDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "startAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "eventType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attendanceMode": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "organizer": {
+            "type": "object"
+          },
+          "refundPolicy": {
+            "type": "object",
+            "properties": {
+              "refundsEnabled": {
+                "type": "boolean"
+              },
+              "refundDeadlineHours": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          },
+          "ticketTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketType"
+            }
+          }
+        }
+      },
+      "TicketSelection": {
+        "type": "object",
+        "properties": {
+          "ticketTypeId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "ticketTypeId",
+          "quantity"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "openingHours": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "longitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "reservationsEnabled": {
+            "type": "boolean"
+          },
+          "maxGuests": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "url",
+          "reservationsEnabled",
+          "maxGuests"
+        ]
+      },
+      "EventAvailability": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "shortId події"
+          },
+          "ticketTypes": {
+            "type": "object",
+            "description": "Залишок по типах квитків: { ticketTypeId: remaining }. Порожній обʼєкт, якщо обмеженої місткості немає.",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "eventId",
+          "ticketTypes",
+          "checkedAt"
+        ]
+      },
+      "TableReservation": {
+        "type": "object",
+        "properties": {
+          "reservationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус броні; нова бронь чекає підтвердження закладу."
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "time": {
+            "type": "string",
+            "example": "19:00"
+          },
+          "partySize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reservationId",
+          "status",
+          "locationId",
+          "date",
+          "time",
+          "partySize"
+        ]
+      },
+      "TicketReservation": {
+        "type": "object",
+        "properties": {
+          "reservationId": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "remaining": {
+            "type": "object",
+            "description": "Залишок після резерву: { ticketTypeId: remaining }.",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "reservationId",
+          "eventId",
+          "expiresAt"
+        ]
+      },
+      "Checkout": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "description": "Опитуйте GET /orders/{paymentId}, щоб дізнатися статус оплати."
+          },
+          "paymentUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Сторінка оплати, яку відкриває людина."
+          }
+        },
+        "required": [
+          "paymentId",
+          "paymentUrl"
+        ]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "SUCCESS",
+              "FAILED",
+              "EXPIRED",
+              "REFUNDED"
+            ]
+          },
+          "amountMinor": {
+            "type": "integer",
+            "description": "Сума в копійках."
+          },
+          "amountDecimal": {
+            "type": "string",
+            "description": "Сума десятковим рядком."
+          },
+          "currency": {
+            "type": "string",
+            "example": "UAH"
+          },
+          "attendeeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "failureReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "paymentId",
+          "eventId",
+          "status",
+          "amountMinor",
+          "currency",
+          "createdAt"
+        ]
+      },
+      "WebhookEndpoint": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "secretPrefix": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "failureCount": {
+            "type": "integer"
+          },
+          "disabledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lastSuccessAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "isActive"
+        ]
+      },
+      "WebhookEndpointCreated": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "secret": {
+            "type": "string",
+            "description": "Показується ОДИН раз: ним перевіряють підпис AOA-Signature."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "secret",
+          "createdAt"
+        ]
+      },
+      "WebhookEndpointUpdated": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "failureCount": {
+            "type": "integer"
+          },
+          "disabledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "isActive"
+        ]
+      },
+      "PageMeta": {
+        "type": "object",
+        "description": "Cursor-пагінація: передайте nextCursor як параметр cursor, щоб отримати наступну сторінку. null = сторінок більше немає.",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "count",
+          "nextCursor",
+          "hasMore"
+        ]
+      },
+      "BatchOperation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Ваш ідентифікатор, повертається в результаті."
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET"
+            ],
+            "default": "GET"
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Шлях відносно /api/v1 з query, напр. /events/AB12CD34/availability.",
+            "example": "/events/AB12CD34"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "BatchResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP-статус операції."
+          },
+          "body": {
+            "description": "Тіло відповіді операції: { data } або { error }."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "body"
+        ]
+      },
+      "TableAvailability": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "disabled",
+              "closed",
+              "no_slots"
+            ]
+          },
+          "maxGuests": {
+            "type": "integer"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "example": "19:00"
+                },
+                "label": {
+                  "type": "string",
+                  "example": "19:00"
+                },
+                "available": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/locations": {
+      "get": {
+        "operationId": "searchLocations",
+        "tags": [
+          "Locations"
+        ],
+        "summary": "Пошук закладів, де можна забронювати столик",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookable",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 10
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Непрозорий курсор: meta.nextCursor попередньої сторінки. Без нього повертається перша сторінка."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Заклади",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Location"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PageMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/locations/{locationId}": {
+      "get": {
+        "operationId": "getLocation",
+        "tags": [
+          "Locations"
+        ],
+        "summary": "Деталі закладу",
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Заклад",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Location"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Заклад не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/locations/{locationId}/availability": {
+      "get": {
+        "operationId": "getTableAvailability",
+        "tags": [
+          "Locations"
+        ],
+        "summary": "Вільний час для бронювання столика",
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Доступні слоти",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TableAvailability"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Заклад не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "operationId": "searchEvents",
+        "tags": [
+          "Events"
+        ],
+        "summary": "Список опублікованих подій",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Slug категорії (workshop, lecture, party, …)."
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Назва міста (case-insensitive)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Непрозорий курсор: meta.nextCursor попередньої сторінки. Без нього повертається перша сторінка."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список подій",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EventSummary"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PageMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/events/{eventId}": {
+      "get": {
+        "operationId": "getEvent",
+        "tags": [
+          "Events"
+        ],
+        "summary": "Деталі події",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "shortId або повний id події."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Деталі події",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EventDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Подію не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Подію видалено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/events/{eventId}/ticket-types": {
+      "get": {
+        "operationId": "getEventTicketTypes",
+        "tags": [
+          "Events"
+        ],
+        "summary": "Типи квитків події",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Типи квитків з availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketType"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/events/{eventId}/availability": {
+      "get": {
+        "operationId": "getEventAvailability",
+        "tags": [
+          "Events"
+        ],
+        "summary": "Поточна доступність квитків (real-time)",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Залишки по типах квитків",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EventAvailability"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Подію не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/table-reservations": {
+      "post": {
+        "operationId": "createTableReservation",
+        "tags": [
+          "Locations",
+          "Commerce"
+        ],
+        "summary": "Створити бронювання столика після підтвердження людиною",
+        "description": "Спочатку покажіть людині заклад, дату, час, кількість гостей та контакти. Викликайте операцію лише після її явного підтвердження; передайте confirmedByUser=true. Повтор використовується через Idempotency-Key.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8
+            }
+          },
+          {
+            "name": "X-Agent-Provider",
+            "in": "header",
+            "required": false,
+            "description": "Аналітичний ідентифікатор конектора, наприклад muse. Не використовується для авторизації.",
+            "schema": {
+              "type": "string",
+              "example": "muse"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "locationId": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "time": {
+                    "type": "string",
+                    "pattern": "^\\d{2}:\\d{2}$"
+                  },
+                  "partySize": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50
+                  },
+                  "guest": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string",
+                        "format": "email"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "phone"
+                    ]
+                  },
+                  "comment": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "confirmedByUser": {
+                    "type": "boolean",
+                    "const": true
+                  }
+                },
+                "required": [
+                  "locationId",
+                  "date",
+                  "time",
+                  "partySize",
+                  "guest",
+                  "confirmedByUser"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Бронювання створено або replay попереднього (meta.idempotent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TableReservation"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалідні дані або немає підтвердження",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Потрібен API-ключ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Бракує scope reservations:write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Така бронь уже існує",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/reservations": {
+      "post": {
+        "operationId": "createTicketReservation",
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "Soft-hold резервування квитків на 15 хвилин",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Agent-Provider",
+            "in": "header",
+            "required": false,
+            "description": "Аналітичний ідентифікатор конектора, наприклад muse. Не використовується для авторизації.",
+            "schema": {
+              "type": "string",
+              "example": "muse"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "eventId": {
+                    "type": "string"
+                  },
+                  "tickets": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TicketSelection"
+                    }
+                  }
+                },
+                "required": [
+                  "eventId",
+                  "tickets"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Резерв створено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TicketReservation"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Потрібен API-ключ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Бракує scope reservations:write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Квитків недостатньо",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/checkout": {
+      "post": {
+        "operationId": "createTicketCheckout",
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "Створення платежу за квитки",
+        "description": "Повертає paymentUrl (Monobank). Гостьовий checkout — лист із квитком надходить на buyer.email після оплати. Обовʼязковий заголовок Idempotency-Key.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8
+            }
+          },
+          {
+            "name": "Prefer",
+            "in": "header",
+            "required": false,
+            "description": "respond-async (RFC 7240): відповідь 202 Accepted з Location на статус замовлення. Без заголовка 200.",
+            "schema": {
+              "type": "string",
+              "example": "respond-async"
+            }
+          },
+          {
+            "name": "X-Agent-Provider",
+            "in": "header",
+            "required": false,
+            "description": "Аналітичний ідентифікатор конектора, наприклад muse. Не використовується для авторизації.",
+            "schema": {
+              "type": "string",
+              "example": "muse"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "eventId": {
+                    "type": "string"
+                  },
+                  "tickets": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TicketSelection"
+                    },
+                    "maxItems": 20
+                  },
+                  "buyer": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "email",
+                      "name"
+                    ]
+                  },
+                  "couponCode": {
+                    "type": "string"
+                  },
+                  "referralCode": {
+                    "type": "string",
+                    "description": "Invite-код події (?tk= з invite-посилання). Обовʼязковий, коли couponCode = \"REFERRAL\"; інакше ігнорується."
+                  },
+                  "reservationId": {
+                    "type": "string",
+                    "description": "Якщо квитки попередньо зарезервовані."
+                  }
+                },
+                "required": [
+                  "eventId",
+                  "tickets",
+                  "buyer"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Платіж створено. Оплата асинхронна: людина платить за paymentUrl, статус опитуйте GET /orders/{paymentId} або слухайте вебхук order.paid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Checkout"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Prefer: respond-async. Платіж прийнято в обробку: людина платить за paymentUrl, статус опитуйте за Location (GET /orders/{paymentId}) з інтервалом Retry-After.",
+            "headers": {
+              "Location": {
+                "description": "URL статусу: GET /api/v1/orders/{paymentId}.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "Retry-After": {
+                "description": "Рекомендований інтервал опитування, секунди.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Checkout"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "PENDING"
+                              ]
+                            },
+                            "statusUrl": {
+                              "type": "string",
+                              "format": "uri"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "statusUrl"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалідні дані або відсутній Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Потрібен API-ключ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Бракує scope checkout:write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Квитків немає або платежі не налаштовані",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/batch": {
+      "post": {
+        "operationId": "batchOperations",
+        "tags": [
+          "Events"
+        ],
+        "summary": "Кілька read-операцій одним запитом (batch)",
+        "description": "До 20 GET-операцій публічного API за один запит. Результати йдуть у тому самому порядку, кожен зі своїм HTTP-статусом і тілом. Кожна операція рахується в ліміт як окремий запит; партнерський ключ з Authorization діє для всіх операцій.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operations": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "$ref": "#/components/schemas/BatchOperation"
+                    }
+                  }
+                },
+                "required": [
+                  "operations"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Результати операцій",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BatchResult"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Порожній або завеликий масив операцій",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "operationId": "listWebhooks",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Список зареєстрованих endpoint-ів",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint-и партнера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEndpoint"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Бракує scope webhooks:write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Зареєструвати endpoint",
+        "description": "Повертає secret ОДИН раз — ним партнер перевіряє підпис заголовка AOA-Signature. URL має бути https на порту 443 або 8443 і резолвитись у публічну адресу: приватні, loopback і link-local діапазони відхиляються при реєстрації та перед кожною доставкою.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "order.paid",
+                        "order.failed",
+                        "order.refunded",
+                        "event.cancelled",
+                        "event.updated",
+                        "attendee.registered",
+                        "attendee.checked_in"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "url",
+                  "events"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Endpoint створено (secret у відповіді)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookEndpointCreated"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалідний URL або тип події",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Бракує scope webhooks:write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Досягнуто ліміт endpoint-ів",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/webhooks/{endpointId}": {
+      "patch": {
+        "operationId": "updateWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Змінити підписки або ввімкнути після авто-вимкнення",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint оновлено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookEndpointUpdated"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Endpoint не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Видалити endpoint",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "endpointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Видалено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "deleted": {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "deleted"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Endpoint не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/orders/{paymentId}": {
+      "get": {
+        "operationId": "getOrder",
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "Статус замовлення (платежу)",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус замовлення (платежу)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Order"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Замовлення не знайдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    }
+  }
+}

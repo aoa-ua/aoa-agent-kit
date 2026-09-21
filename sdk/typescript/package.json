@@ -1,0 +1,65 @@
+{
+  "name": "@aoa-ua/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for the AOA public API: venues, table availability and bookings, events, tickets, checkout and webhooks in Ukraine.",
+  "keywords": [
+    "aoa",
+    "aoa.com.ua",
+    "api",
+    "sdk",
+    "events",
+    "tickets",
+    "table-reservation",
+    "restaurants",
+    "ukraine",
+    "ai-agents",
+    "mcp"
+  ],
+  "homepage": "https://aoa.com.ua/docs",
+  "bugs": {
+    "url": "https://github.com/aoa-ua/aoa-agent-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aoa-ua/aoa-agent-kit.git",
+    "directory": "sdk/typescript"
+  },
+  "license": "MIT",
+  "author": "AOA (https://aoa.com.ua)",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "openapi.snapshot.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "generate": "node scripts/generate-types.mjs",
+    "generate:fetch": "node scripts/generate-types.mjs --fetch",
+    "generate:check": "node scripts/generate-types.mjs --check",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "npm run generate:check && npm run build && npm run typecheck && node --test test/client.test.mjs test/webhooks.test.mjs test/generated.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

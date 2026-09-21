@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "aoa",
+  "version": "0.1.0",
+  "description": "Find venues and events in Ukraine on AOA, check table availability, book tables the person confirms, sell tickets and verify webhooks. Bundles four Agent Skills and the AOA MCP server.",
+  "author": {
+    "name": "AOA",
+    "email": "hello@aoa.com.ua",
+    "url": "https://aoa.com.ua"
+  },
+  "homepage": "https://aoa.com.ua/docs",
+  "repository": "https://github.com/aoa-ua/aoa-agent-kit",
+  "license": "MIT",
+  "keywords": [
+    "aoa",
+    "ukraine",
+    "kyiv",
+    "venues",
+    "restaurants",
+    "table-reservation",
+    "events",
+    "tickets",
+    "mcp",
+    "agent-skills"
+  ]
+}

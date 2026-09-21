@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aoa-sdk"
+version = "0.1.0"
+description = "Official Python SDK for the AOA public API: venues, table bookings, events, tickets, checkout and webhooks in Ukraine."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "AOA", email = "hello@aoa.com.ua" }]
+keywords = ["aoa", "api", "sdk", "events", "tickets", "table-reservation", "ukraine", "ai-agents", "mcp"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Software Development :: Libraries",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://aoa.com.ua/docs"
+Documentation = "https://aoa.com.ua/docs/api-reference/introduction"
+Repository = "https://github.com/aoa-ua/aoa-agent-kit"
+Issues = "https://github.com/aoa-ua/aoa-agent-kit/issues"
+Changelog = "https://github.com/aoa-ua/aoa-agent-kit/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aoa_sdk"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/aoa_sdk", "tests", "README.md", "LICENSE", "pyproject.toml"]

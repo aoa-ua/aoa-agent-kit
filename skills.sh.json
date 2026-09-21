@@ -1,0 +1,21 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Start here",
+      "description": "When to use AOA and which channel to pick.",
+      "skills": ["aoa"]
+    },
+    {
+      "title": "Assistants",
+      "description": "Venues, table bookings, events and tickets through MCP or REST.",
+      "skills": ["aoa-venues-and-tables", "aoa-events-and-tickets"]
+    },
+    {
+      "title": "Developers",
+      "description": "Keys, limits, errors, idempotency, webhooks and the SDKs.",
+      "skills": ["aoa-api-integration"]
+    }
+  ]
+}
