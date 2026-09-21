@@ -15,7 +15,7 @@
     {
       "title": "Developers",
       "description": "Keys, limits, errors, idempotency, webhooks and the SDKs.",
-      "skills": ["aoa-api-integration"]
+      "skills": ["aoa-api-integration", "aoa-webhooks"]
     }
   ]
 }

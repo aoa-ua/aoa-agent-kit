@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "aoa",
   "version": "0.1.0",
-  "description": "Find venues and events in Ukraine on AOA, check table availability, book tables the person confirms, sell tickets and verify webhooks. Bundles four Agent Skills and the AOA MCP server.",
+  "description": "Find venues and events in Ukraine on AOA, check table availability, book tables the person confirms, sell tickets and verify webhooks. Bundles five Agent Skills and the AOA MCP server.",
   "author": {
     "name": "AOA",
     "email": "hello@aoa.com.ua",

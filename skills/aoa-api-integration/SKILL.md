@@ -128,6 +128,7 @@ Verify the RAW body before parsing, compare in constant time, reject
 signatures older than 5 minutes, deduplicate by `AOA-Delivery-Id`, answer
 any `2xx` fast and do the work afterwards. Full contract, retry schedule and
 examples: [references/webhooks.md](references/webhooks.md).
+Building a receiver end to end: the [aoa-webhooks](../aoa-webhooks/SKILL.md) skill.
 
 ## Versioning
 

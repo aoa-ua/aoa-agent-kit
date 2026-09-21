@@ -16,7 +16,7 @@ stock, book a table the person confirms, sell tickets and receive webhooks.
 | [`sdk/typescript`](sdk/typescript) | TypeScript SDK, types generated from the OpenAPI spec, zero runtime deps |
 | [`sdk/python`](sdk/python) | Python SDK, standard library only |
 | [`sdk/go`](sdk/go) | Go SDK, standard library only |
-| [`skills/`](skills) | Four [Agent Skills](https://agentskills.io) (`SKILL.md`) |
+| [`skills/`](skills) | Five [Agent Skills](https://agentskills.io) (`SKILL.md`) |
 | [`plugin.json`](plugin.json), [`mcp.json`](mcp.json) | [Agent Plugins](https://agent-plugins.org/specification) 1.0.0 manifest: the skills plus the AOA MCP server |
 | [`AGENTS.md`](AGENTS.md), [`.cursorrules`](.cursorrules) | Instructions for AI coding agents working with AOA |
 
@@ -56,6 +56,7 @@ npx skills add aoa-ua/aoa-agent-kit
 | [`aoa-venues-and-tables`](skills/aoa-venues-and-tables/SKILL.md) | Venues, free table slots, bookings the person confirms |
 | [`aoa-events-and-tickets`](skills/aoa-events-and-tickets/SKILL.md) | Events, ticket types, holds, checkout, order status |
 | [`aoa-api-integration`](skills/aoa-api-integration/SKILL.md) | Keys, limits, errors, idempotency, webhooks, SDKs |
+| [`aoa-webhooks`](skills/aoa-webhooks/SKILL.md) | Webhook endpoints, event payloads, signature checks, retries, no-code tools |
 
 Clients that support [Agent Plugins](https://agent-plugins.org) can load this
 whole repository as one plugin: `plugin.json` at the root, skills under

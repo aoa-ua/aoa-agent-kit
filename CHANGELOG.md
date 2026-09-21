@@ -3,6 +3,13 @@
 All notable changes to this kit. The SDKs follow [Semantic Versioning](https://semver.org);
 the API itself is versioned in its path (`/api/v1`).
 
+## Unreleased
+
+- Agent Skill `aoa-webhooks`: receiving AOA webhooks end to end. Endpoint
+  management, event catalog and payloads, `AOA-Signature` verification with
+  each SDK and without one, retries and deduplication, auto-disable and
+  recovery, replacing a leaked secret, Make, Zapier and n8n.
+
 ## 0.1.0 (unreleased)
 
 First public version.
