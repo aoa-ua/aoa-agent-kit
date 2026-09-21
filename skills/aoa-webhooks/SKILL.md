@@ -52,12 +52,12 @@ curl -X POST https://aoa.com.ua/api/v1/webhooks \
 | Type | Sent when |
 |---|---|
 | `order.paid` | the bank confirmed the payment; the attendee exists from now on |
-| `order.failed` | payment declined or timed out |
+| `order.failed` | the payment will not happen: declined, timed out, or abandoned |
 | `order.refunded` | money returned, ticket voided |
 | `event.cancelled` | the event is cancelled and all its tickets are void |
-| `event.updated` | time or place changed |
-| `attendee.registered` | registration for a free event (no payment) |
-| `attendee.checked_in` | the guest passed check-in at the entrance |
+| `event.updated` | time or place of a published event changed |
+| `attendee.registered` | an attendee is confirmed without a payment (free ticket, approved request, guest added by the organizer) |
+| `attendee.checked_in` | a ticket passed check-in at the entrance |
 
 Subscribe only to what you handle. Every body is the same envelope
 `{ "id", "type", "createdAt", "data" }` (`createdAt` is ISO 8601 UTC) and
@@ -66,15 +66,32 @@ Subscribe only to what you handle. Every body is the same envelope
 | Type | `data` |
 |---|---|
 | `order.paid` | `paymentId`, `eventId`, `status: "SUCCESS"`, `amountMinor`, `currency`, `attendeeId` (may be `null`) |
+| `order.failed` | `paymentId`, `eventId`, `status` (`"FAILED"`: the bank declined; `"EXPIRED"`: the time ran out or the buyer abandoned or replaced the checkout), `amountMinor`, `currency` |
 | `order.refunded` | `paymentId`, `eventId`, `status: "REFUNDED"`, `amountMinor` (what was actually returned; less than paid when the buyer's service fee is kept) |
 | `event.cancelled` | `eventId`, `title`, `startAt` (ISO 8601 or `null`) |
+| `event.updated` | `eventId`, `title`, `changed` (`["time"]`, `["place"]` or both), the current `startAt`, `endAt`, `allDay` and `location` (`{ name, address, city }` or `null`) exactly as `GET /api/v1/events/{eventId}` returns them, and `dates` (`[{ startAt, endAt }]`, every day or time slot in chronological order) |
+| `attendee.registered` | `attendeeId`, `eventId`, `status: "confirmed"`, `tickets` (`[{ ticketTypeId, quantity }]`) |
+| `attendee.checked_in` | `attendeeId`, `eventId`, `ticketTypeId`, `quantity`, `method` (`"qr"`, `"nfc"` or `"manual"`), `checkedInAt` |
 
 - `amountMinor` is kopecks as an integer. `eventId` is the event short id,
-  the one `GET /api/v1/events/{eventId}` accepts.
-- The docs publish no payload for the other four types: branch on `type`,
-  read `data` defensively, ignore unknown fields.
+  the one `GET /api/v1/events/{eventId}` accepts. `ticketTypeId` is the `id`
+  from `GET /api/v1/events/{eventId}/ticket-types`.
+- No payload carries a name, email or phone: attendees come as ids only.
+- Branch on `type` and ignore fields you do not know; AOA may add fields.
 - `event.cancelled` is not a refund. Each refund arrives as its own
   `order.refunded`; do not mark money as returned before that.
+- `event.updated` carries the whole current schedule and place, so overwrite
+  your copy. Title, description or cover edits send nothing; `dates` matters
+  for multi-day events, where moving a middle day leaves `startAt` and
+  `endAt` unchanged.
+- `attendee.registered` never repeats a paid registration (that is
+  `order.paid`). An approval-required registration arrives when it is
+  approved, a waitlisted guest when admitted. One per attendee: cancelling
+  and registering again sends nothing new.
+- `attendee.checked_in` is per ticket: an attendee with several day tickets
+  gets one per ticket. `quantity` above 1 is a group ticket. Undoing a
+  check-in sends nothing, and checking the same ticket in again does not
+  repeat it.
 
 ## 3. Headers
 
@@ -155,9 +172,9 @@ SDK, or tests with self-signed fixtures: [references/verify-without-sdk.md](refe
   late. Keep processed `id`s for a day and skip known ones; record them
   atomically (a unique index, `SET NX`), not read then write.
 - `id` is per endpoint: two endpoints on one type get different ids for the
-  same happening. AOA queues one `order.paid` and one `order.refunded` per
-  payment per endpoint; with several endpoints, also key money side effects
-  on `type` plus `data.paymentId`.
+  same happening. AOA queues at most one `order.paid`, `order.failed` and
+  `order.refunded` per payment per endpoint; with several endpoints, also key
+  money side effects on `type` plus `data.paymentId`.
 - No ordering guarantee: each delivery retries on its own. Order by
   `createdAt` (when AOA queued it), not arrival. An `order.refunded` that
   beats its `order.paid` must not create a record from scratch.

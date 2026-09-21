@@ -25,12 +25,12 @@ URL.
 | Type | Sent when |
 |---|---|
 | `order.paid` | the bank confirmed the payment; the attendee exists from now on |
-| `order.failed` | payment declined or timed out |
+| `order.failed` | the payment will not happen: declined, timed out, or abandoned |
 | `order.refunded` | money returned, ticket voided |
 | `event.cancelled` | the event is cancelled; all its tickets are void (can arrive weeks after the purchase) |
-| `event.updated` | time or place changed |
-| `attendee.registered` | registration for a free event (no payment) |
-| `attendee.checked_in` | the guest passed check-in at the entrance |
+| `event.updated` | time or place of a published event changed |
+| `attendee.registered` | an attendee is confirmed without a payment (free ticket, approved request, guest added by the organizer) |
+| `attendee.checked_in` | a ticket passed check-in at the entrance |
 
 ## Delivery
 
@@ -65,9 +65,12 @@ The envelope (`id`, `type`, `createdAt`, `data`) is the same for every type;
 - Timeout per attempt: 10 seconds. Answer first, work afterwards.
 - Retries after a failure: 1 min, 5 min, 30 min, 2 h, 6 h (6 attempts in
   total, about 9 hours). Keep processed delivery ids for a day to deduplicate.
-- After 20 consecutive failed deliveries the endpoint is disabled
-  (`isActive: false`, `disabledAt` set). Fix your server, then
-  `PATCH /webhooks/{id}` with `{ "isActive": true }`.
+- Every failed attempt, retries included, adds 1 to the endpoint's
+  `failureCount`, and any successful delivery resets it to 0. At 20 failed
+  attempts in a row the endpoint is disabled (`isActive: false`, `disabledAt`
+  set). The count is attempts, not events: one event that exhausts its
+  retries adds 6. Fix your server, then `PATCH /webhooks/{id}` with
+  `{ "isActive": true }` (resets the counter).
 
 ## Verifying the signature
 
