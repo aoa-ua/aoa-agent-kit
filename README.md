@@ -68,6 +68,16 @@ Reads need no key (60 requests per minute per IP). Bookings, ticket holds,
 checkout and webhooks need a partner key `aoa_live_…`, issued on request via
 https://aoa.com.ua/contact.
 
+| Language | Package | Registry | Source |
+|---|---|---|---|
+| TypeScript | `@aoa-ua/sdk` | [npm](https://www.npmjs.com/package/@aoa-ua/sdk) | [`sdk/typescript`](sdk/typescript) |
+| Python | `aoa-sdk` | [PyPI](https://pypi.org/project/aoa-sdk/) | [`sdk/python`](sdk/python) |
+| Go | `github.com/aoa-ua/aoa-agent-kit/sdk/go` | [pkg.go.dev](https://pkg.go.dev/github.com/aoa-ua/aoa-agent-kit/sdk/go) | [`sdk/go`](sdk/go) |
+
+All three cover every operation of the same OpenAPI contract
+(https://aoa.com.ua/openapi.json; `scripts/validate-kit.mjs` checks it), and
+each package links back to https://aoa.com.ua.
+
 ### TypeScript
 
 ```bash
