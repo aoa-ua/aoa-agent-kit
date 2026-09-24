@@ -1,6 +1,6 @@
 # AOA SDK for TypeScript
 
-Official client for the [AOA](https://aoa.com.ua) public API: venues and
+Official client for the [AOA (Act of Attraction)](https://aoa.com.ua/what-is-aoa) public API: venues and
 table bookings, events and tickets, checkout, orders and webhooks in Ukraine.
 
 - One typed method per `operationId` of the [OpenAPI spec](https://aoa.com.ua/openapi.json);

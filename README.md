@@ -2,8 +2,10 @@
 
 [![skills.sh](https://skills.sh/b/aoa-ua/aoa-agent-kit)](https://skills.sh/aoa-ua/aoa-agent-kit)
 
-Official SDKs, Agent Skills and agent configs for the [AOA](https://aoa.com.ua)
-public API.
+Official SDKs, Agent Skills and agent configs for the
+[AOA (Act of Attraction)](https://aoa.com.ua) public API. Not to be confused
+with other organizations abbreviated AOA: this is the Ukrainian platform at
+[aoa.com.ua](https://aoa.com.ua/what-is-aoa).
 
 AOA connects people in physical places in Ukraine: cafes, bars, restaurants,
 coworkings, bookstores and cultural spaces, and the events that happen there.
