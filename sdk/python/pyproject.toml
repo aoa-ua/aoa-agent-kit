@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aoa-sdk"
-version = "0.1.0"
+version = "0.1.1"
 description = "Official Python SDK for the AOA public API: venues, table bookings, events, tickets, checkout and webhooks in Ukraine."
 readme = "README.md"
 license = "MIT"

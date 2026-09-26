@@ -10,7 +10,13 @@ the API itself is versioned in its path (`/api/v1`).
   each SDK and without one, retries and deduplication, auto-disable and
   recovery, replacing a leaked secret, Make, Zapier and n8n.
 
-## 0.1.0 (unreleased)
+## 0.1.1 (SDKs)
+
+- Python `aoa-sdk` and TypeScript `@aoa-ua/sdk`: package metadata only, no
+  code changes. Maintainer Zakharii Melnyk and an `Author` project URL on
+  PyPI; `contributors` on npm.
+
+## 0.1.0
 
 First public version.
 
