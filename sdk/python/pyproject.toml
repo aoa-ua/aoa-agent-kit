@@ -11,6 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.9"
 authors = [{ name = "AOA", email = "hello@aoa.com.ua" }]
+maintainers = [{ name = "Zakharii Melnyk" }]
 keywords = ["aoa", "api", "sdk", "events", "tickets", "table-reservation", "ukraine", "ai-agents", "mcp"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -30,6 +31,7 @@ Documentation = "https://aoa.com.ua/docs/api-reference/introduction"
 Repository = "https://github.com/aoa-ua/aoa-agent-kit"
 Issues = "https://github.com/aoa-ua/aoa-agent-kit/issues"
 Changelog = "https://github.com/aoa-ua/aoa-agent-kit/blob/main/CHANGELOG.md"
+Author = "https://uaoa.github.io/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aoa_sdk"]
