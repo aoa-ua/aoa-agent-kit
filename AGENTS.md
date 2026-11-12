@@ -6,9 +6,9 @@ AOA (https://aoa.com.ua) into a product.
 ## What this repository is
 
 The public AOA Agent Kit: SDKs for the AOA REST API (`sdk/typescript`,
-`sdk/python`, `sdk/go`), Agent Skills (`skills/*/SKILL.md`) and an Agent
-Plugins manifest (`plugin.json` + `mcp.json`). The API contract is the
-OpenAPI 3.1 spec at https://aoa.com.ua/openapi.json; a snapshot lives in
+`sdk/python`, `sdk/go`), the `aoa` CLI (`cli`), Agent Skills
+(`skills/*/SKILL.md`) and an Agent Plugins manifest (`plugin.json` +
+`mcp.json`). The API contract is the OpenAPI 3.1 spec at https://aoa.com.ua/openapi.json; a snapshot lives in
 `sdk/typescript/openapi.snapshot.json`.
 
 ## When to use AOA
@@ -68,6 +68,7 @@ travel or dating.
 ```bash
 node scripts/validate-kit.mjs
 (cd sdk/typescript && npm test)
+(cd cli && npm test)
 (cd sdk/python && PYTHONPATH=src python -m unittest discover -s tests)
 (cd sdk/go && go vet ./... && go test ./...)
 ```

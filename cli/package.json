@@ -1,0 +1,58 @@
+{
+  "name": "@aoa-ua/cli",
+  "version": "0.1.0",
+  "description": "Official command-line client for the AOA public API: search venues and events in Ukraine, check free table slots and ticket stock, read orders, call any API operation. Zero dependencies.",
+  "keywords": [
+    "aoa",
+    "aoa.com.ua",
+    "cli",
+    "api",
+    "events",
+    "tickets",
+    "table-reservation",
+    "restaurants",
+    "ukraine",
+    "ai-agents"
+  ],
+  "homepage": "https://aoa.com.ua/docs/api-reference/introduction",
+  "bugs": {
+    "url": "https://github.com/aoa-ua/aoa-agent-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aoa-ua/aoa-agent-kit.git",
+    "directory": "cli"
+  },
+  "license": "MIT",
+  "author": "AOA (https://aoa.com.ua)",
+  "contributors": [
+    {
+      "name": "Zakharii Melnyk",
+      "url": "https://uaoa.github.io/"
+    }
+  ],
+  "type": "module",
+  "bin": {
+    "aoa": "./bin/aoa.mjs"
+  },
+  "exports": {
+    ".": "./src/cli.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/cli.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

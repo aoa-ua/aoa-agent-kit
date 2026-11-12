@@ -18,6 +18,7 @@ stock, book a table the person confirms, sell tickets and receive webhooks.
 | [`sdk/typescript`](sdk/typescript) | TypeScript SDK, types generated from the OpenAPI spec, zero runtime deps |
 | [`sdk/python`](sdk/python) | Python SDK, standard library only |
 | [`sdk/go`](sdk/go) | Go SDK, standard library only |
+| [`cli`](cli) | `aoa` command-line client (`npx @aoa-ua/cli`), zero dependencies |
 | [`skills/`](skills) | Five [Agent Skills](https://agentskills.io) (`SKILL.md`) |
 | [`plugin.json`](plugin.json), [`mcp.json`](mcp.json) | [Agent Plugins](https://agent-plugins.org/specification) 1.0.0 manifest: the skills plus the AOA MCP server |
 | [`AGENTS.md`](AGENTS.md), [`.cursorrules`](.cursorrules) | Instructions for AI coding agents working with AOA |
@@ -84,6 +85,17 @@ created. Docs: https://aoa.com.ua/docs/api-reference/sandbox
 All three cover every operation of the same OpenAPI contract
 (https://aoa.com.ua/openapi.json; `scripts/validate-kit.mjs` checks it), and
 each package links back to https://aoa.com.ua.
+
+### Command line
+
+```bash
+npx @aoa-ua/cli venues --city Київ --bookable
+npx @aoa-ua/cli tables <venueId> --date 2026-10-03
+npx @aoa-ua/cli --sandbox events --json
+```
+
+`aoa --help` lists every command; `--json` prints the raw response for
+scripts and agents. Details: [`cli/README.md`](cli/README.md).
 
 ### TypeScript
 

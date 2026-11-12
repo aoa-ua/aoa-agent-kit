@@ -5,6 +5,11 @@ the API itself is versioned in its path (`/api/v1`).
 
 ## Unreleased
 
+- CLI `@aoa-ua/cli` 0.1.0 (`aoa`): venue and event search, venue and event
+  details, free table slots, live ticket stock, order status and a raw
+  `aoa api <METHOD> </path>` for any operation. `--json` for scripts and
+  agents, `--sandbox` for test data, key from `AOA_API_KEY`. Zero
+  dependencies, Node 20+.
 - Agent Skill `aoa-webhooks`: receiving AOA webhooks end to end. Endpoint
   management, event catalog and payloads, `AOA-Signature` verification with
   each SDK and without one, retries and deduplication, auto-disable and
